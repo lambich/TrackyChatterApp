@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "940359666465",
+    "project_id": "trackychatter-54087",
+    "storage_bucket": "trackychatter-54087.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940359666465:android:2588a3ac2ae9869e364c60",
+        "android_client_info": {
+          "package_name": "com.exa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAl6eK0cUZGdsDKyYK5NwuxP5EzEOReIak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
