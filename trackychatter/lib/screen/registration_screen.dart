@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -12,7 +13,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  DateTime? _selectedDate;
+  var isVerified = false;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+        _dateController.text = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      });
+    }
+  }
 
   void _showVerificationDialog() {
     if (_phoneController.text.isEmpty) {
@@ -46,11 +66,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           ),
           actions: [
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 if (_codeController.text == '000000') {
-                  // Use 000000 for testing
+                  setState(() {
+                    isVerified = true;
+                  });
                   Navigator.of(context).pop(); // Close the dialog
-                  await _registerUser();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Phone number verified!')),
+                  );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Invalid code')),
@@ -73,13 +97,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   Future<void> _registerUser() async {
     if (_formKey.currentState!.validate()) {
+      if (_nameController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Name cannot be empty')),
+        );
+        return;
+      }
       try {
-        // Register the user using Firebase Authentication
         UserCredential userCredential =
             await _auth.createUserWithEmailAndPassword(
           email: _emailController.text,
-          password:
-              'dummyPassword', // Use a temporary password or implement password functionality
+          password: 'dummyPassword',
         );
 
         // Store additional user information if needed
@@ -143,21 +171,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 SizedBox(height: 16),
                 // Email Field
                 TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                        .hasMatch(value)) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                          .hasMatch(value)) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    }),
                 SizedBox(height: 16),
                 // Phone Number Field
                 Row(
@@ -165,7 +192,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     Expanded(
                       child: TextFormField(
                         controller: _phoneController,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Phone Number',
                           border: OutlineInputBorder(),
                         ),
@@ -176,40 +203,58 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           }
                           return null;
                         },
+                        enabled: !isVerified,
                       ),
                     ),
-                    SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: _showVerificationDialog,
-                      child: Text('Verify'),
-                    ),
+                    const SizedBox(width: 16),
+                    isVerified
+                        ? const Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('Verified',
+                                  style: TextStyle(color: Colors.green)),
+                            ],
+                          )
+                        : ElevatedButton(
+                            onPressed: _showVerificationDialog,
+                            child: const Text('Verify'),
+                          ),
                   ],
                 ),
                 SizedBox(height: 16),
                 // Age Field
-                TextFormField(
-                  controller: _ageController,
-                  decoration: InputDecoration(
-                    labelText: 'Age',
-                    border: OutlineInputBorder(),
+                GestureDetector(
+                  onTap: () => _selectDate(context),
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      controller: _dateController,
+                      decoration: InputDecoration(
+                        labelText: 'Date of Birth',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select your date of birth';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your age';
-                    }
-                    return null;
-                  },
                 ),
                 SizedBox(height: 32),
                 // Register Button
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      // Handle registration logic here
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Registration successful')),
-                      );
+                      if (isVerified == true) {
+                        await _registerUser();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please verify your phone number')),
+                        );
+                      }
                     }
                   },
                   child: Text('Register'),
