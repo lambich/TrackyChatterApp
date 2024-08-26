@@ -119,13 +119,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                Padding(
+                /*Padding(
                   padding: const EdgeInsets.only(bottom: 32.0),
                   child: Image.asset(
                     'assets/logo.png', // Replace with your logo path
                     height: 100,
                   ),
-                ),
+                ),*/
                 // Name Field
                 TextFormField(
                   controller: _nameController,
